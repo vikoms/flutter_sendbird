@@ -1,0 +1,33 @@
+name: flutter_sendbird_sandbox
+description: "A new Flutter project."
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.8.1
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  sendbird_uikit: ^1.1.0   
+  sendbird_chat_sdk: ^4.5.1
+  image_picker: ^1.1.2
+  file_picker: ^10.2.0
+  background_downloader: ^9.2.3
+  path_provider: ^2.1.5
+  app_badge_plus: ^1.2.3
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
+
+  fonts:
+  - family: SendbirdIcons
+    fonts:
+      - asset: packages/sendbird_uikit/fonts/SendbirdIcons.ttf

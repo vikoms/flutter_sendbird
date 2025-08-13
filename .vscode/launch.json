@@ -1,0 +1,28 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug",
+            "request": "launch",
+            "type": "dart",
+            "toolArgs": [
+                "--dart-define=SENDBIRD_APP_ID=E4DB0A06-3227-4204-A7FC-62031B159021"
+            ]
+        },
+        {
+            "name": "flutter_sendbird_sandbox (profile mode)",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "profile"
+        },
+        {
+            "name": "flutter_sendbird_sandbox (release mode)",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "release"
+        }
+    ]
+}
