@@ -5,7 +5,9 @@ import 'package:background_downloader/background_downloader.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_sendbird_sandbox/channel_list_screen.dart';
+import 'package:get/get.dart';
+import 'base_view.dart';
+import 'controllers/home_controller.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:sendbird_chat_sdk/sendbird_chat_sdk.dart';
@@ -210,7 +212,7 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return GetMaterialApp(
       debugShowCheckedModeBanner: false,
       builder: (context, child) {
         return SendbirdUIKit.provider(
@@ -220,159 +222,99 @@ class MyApp extends StatelessWidget {
           ),
         );
       },
-      home: HomeScreen(), // Separate screen widget
+      home: HomeScreen(),
     );
   }
 }
 
 class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
+  HomeScreen({super.key});
+
+  final HomeController _controller = HomeController();
 
   @override
   Widget build(BuildContext context) {
-    final TextEditingController userIdController = TextEditingController(
-      text: "sendbird_desk_agent_id_6991b122-6fb9-4415-83da-0c3331b7c9ac",
-    );
-    final TextEditingController userNameController = TextEditingController(
-      text: "VIKO",
-    );
-    final TextEditingController accessTokenController = TextEditingController(
-      text: "9da79284f51b09f4382efb3837420b968a76efab",
-    );
-
-    return Scaffold(
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                'Sendbird Login',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                textAlign: TextAlign.center,
+    return BaseView<HomeController>(
+      controller: _controller,
+      builder: (context, controller) {
+        return Scaffold(
+          body: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    'Sendbird Login',
+                    style:
+                        const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 32),
+                  TextField(
+                    controller: controller.userIdController,
+                    decoration: const InputDecoration(
+                      labelText: 'User ID',
+                      border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.account_circle),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: controller.userNameController,
+                    decoration: const InputDecoration(
+                      labelText: 'User Name',
+                      border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.person),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: controller.accessTokenController,
+                    decoration: const InputDecoration(
+                      labelText: 'Access Token',
+                      border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.key),
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                  ElevatedButton(
+                    onPressed: controller.login,
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                    ),
+                    child: const Text('Login', style: TextStyle(fontSize: 16)),
+                  ),
+                ],
               ),
-              const SizedBox(height: 32),
-              TextField(
-                controller: userIdController,
-                decoration: InputDecoration(
-                  labelText: 'User ID',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.account_circle),
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: userNameController,
-                decoration: InputDecoration(
-                  labelText: 'User Name',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.person),
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: accessTokenController,
-                decoration: InputDecoration(
-                  labelText: 'Access Token',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.key),
-                ),
-              ),
-              const SizedBox(height: 32),
-              ElevatedButton(
-                onPressed: () {
-                  final userId = userIdController.text;
-                  final userName = userNameController.text;
-                  final accessToken = accessTokenController.text;
-                  print(
-                    'User ID: $userId, User Name: $userName, Access Token: $accessToken',
-                  );
-
-                  if (userId.isNotEmpty && userName.isNotEmpty) {
-                    // Connect to Sendbird with the provided credentials
-                    SendbirdUIKit.connect(
-                          userId,
-                          accessToken: accessToken,
-                          nickname: userName,
-                        )
-                        .then((_) {
-                          // On successful login, navigate to channel list
-                          moveToChannelListScreen(context);
-                        })
-                        .catchError((error) {
-                          // Show error message if login fails
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                'Login failed: ${error.toString()}',
-                              ),
-                            ),
-                          );
-                        });
-                  } else {
-                    // Show validation message
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('User ID and User Name are required'),
-                      ),
-                    );
-                  }
-                },
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                ),
-                child: const Text('Login', style: TextStyle(fontSize: 16)),
-              ),
-            ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }
 
-void moveToChannelListScreen(BuildContext context) {
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (context) => Scaffold(body: ChannelListScreen()),
-    ),
-  );
-}
-
-void moveToGroupChannelCreateScreen(BuildContext context) {
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (context) => Scaffold(
+void moveToGroupChannelCreateScreen() {
+  Get.to(() => Scaffold(
         body: SafeArea(
           child: SBUGroupChannelCreateScreen(
             onChannelCreated: (channel) {
-              moveToGroupChannelScreen(context, channel.channelUrl);
+              moveToGroupChannelScreen(channel.channelUrl);
             },
           ),
         ),
-      ),
-    ),
-  );
+      ));
 }
 
-void moveToGroupChannelScreen(BuildContext context, String channelUrl) {
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (context) => Scaffold(
+void moveToGroupChannelScreen(String channelUrl) {
+  Get.to(() => Scaffold(
         body: SafeArea(
           child: SBUGroupChannelScreen(
             channelUrl: channelUrl,
             onInfoButtonClicked: (messageCollectionNo) {
-              final collection = SendbirdUIKit.getMessageCollection(
-                messageCollectionNo,
-              );
               moveToGroupChannelInfoScreen(
-                context,
                 channelUrl,
                 messageCollectionNo,
               );
@@ -411,26 +353,19 @@ void moveToGroupChannelScreen(BuildContext context, String channelUrl) {
             onMessageCollectionReady: (messageCollectionNo) {},
           ),
         ),
-      ),
-    ),
-  );
+      ));
 }
 
 void moveToGroupChannelInfoScreen(
-  BuildContext context,
   String channelUrl,
   int messageCollectionNo,
 ) {
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (context) => Scaffold(
+  Get.to(() => Scaffold(
         body: SafeArea(
           child: SBUGroupChannelInformationScreen(
             messageCollectionNo: messageCollectionNo,
             onMembersButtonClicked: (p0) {
               moveToChannelMembersScreen(
-                context,
                 channelUrl,
                 messageCollectionNo,
               );
@@ -443,44 +378,31 @@ void moveToGroupChannelInfoScreen(
             },
           ),
         ),
-      ),
-    ),
-  );
+      ));
 }
 
 void moveToChannelMembersScreen(
-  BuildContext context,
   String channelUrl,
   int messageCollectionNo,
 ) {
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (context) => Scaffold(
+  Get.to(() => Scaffold(
         body: SafeArea(
           child: SBUGroupChannelMembersScreen(
-            messageCollectionNo: messageCollectionNo, // Required parameter
+            messageCollectionNo: messageCollectionNo,
             onInviteButtonClicked: (channel) {
-              moveToInviteUsersScreen(context, messageCollectionNo);
+              moveToInviteUsersScreen(messageCollectionNo);
             },
           ),
         ),
-      ),
-    ),
-  );
+      ));
 }
 
-void moveToInviteUsersScreen(BuildContext context, int messageCollectionNo) {
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (context) => Scaffold(
+void moveToInviteUsersScreen(int messageCollectionNo) {
+  Get.to(() => Scaffold(
         body: SafeArea(
           child: SBUGroupChannelInviteScreen(
             messageCollectionNo: messageCollectionNo,
           ),
         ),
-      ),
-    ),
-  );
+      ));
 }
