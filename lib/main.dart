@@ -5,17 +5,19 @@ import 'package:background_downloader/background_downloader.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_sendbird_sandbox/channel_list_screen.dart';
+import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:sendbird_chat_sdk/sendbird_chat_sdk.dart';
 import 'package:sendbird_uikit/sendbird_uikit.dart';
 
 import 'app_config.dart';
+import 'routes/app_pages.dart';
+import 'routes/app_routes.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  initSendBird();
+  await initSendBird();
   runApp(const MyApp());
 }
 
@@ -210,7 +212,7 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return GetMaterialApp(
       debugShowCheckedModeBanner: false,
       builder: (context, child) {
         return SendbirdUIKit.provider(
@@ -220,267 +222,8 @@ class MyApp extends StatelessWidget {
           ),
         );
       },
-      home: HomeScreen(), // Separate screen widget
+      initialRoute: Routes.home,
+      getPages: AppPages.pages,
     );
   }
-}
-
-class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final TextEditingController userIdController = TextEditingController(
-      text: "sendbird_desk_agent_id_6991b122-6fb9-4415-83da-0c3331b7c9ac",
-    );
-    final TextEditingController userNameController = TextEditingController(
-      text: "VIKO",
-    );
-    final TextEditingController accessTokenController = TextEditingController(
-      text: "9da79284f51b09f4382efb3837420b968a76efab",
-    );
-
-    return Scaffold(
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                'Sendbird Login',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 32),
-              TextField(
-                controller: userIdController,
-                decoration: InputDecoration(
-                  labelText: 'User ID',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.account_circle),
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: userNameController,
-                decoration: InputDecoration(
-                  labelText: 'User Name',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.person),
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: accessTokenController,
-                decoration: InputDecoration(
-                  labelText: 'Access Token',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.key),
-                ),
-              ),
-              const SizedBox(height: 32),
-              ElevatedButton(
-                onPressed: () {
-                  final userId = userIdController.text;
-                  final userName = userNameController.text;
-                  final accessToken = accessTokenController.text;
-                  print(
-                    'User ID: $userId, User Name: $userName, Access Token: $accessToken',
-                  );
-
-                  if (userId.isNotEmpty && userName.isNotEmpty) {
-                    // Connect to Sendbird with the provided credentials
-                    SendbirdUIKit.connect(
-                          userId,
-                          accessToken: accessToken,
-                          nickname: userName,
-                        )
-                        .then((_) {
-                          // On successful login, navigate to channel list
-                          moveToChannelListScreen(context);
-                        })
-                        .catchError((error) {
-                          // Show error message if login fails
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                'Login failed: ${error.toString()}',
-                              ),
-                            ),
-                          );
-                        });
-                  } else {
-                    // Show validation message
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('User ID and User Name are required'),
-                      ),
-                    );
-                  }
-                },
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                ),
-                child: const Text('Login', style: TextStyle(fontSize: 16)),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-void moveToChannelListScreen(BuildContext context) {
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (context) => Scaffold(body: ChannelListScreen()),
-    ),
-  );
-}
-
-void moveToGroupChannelCreateScreen(BuildContext context) {
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (context) => Scaffold(
-        body: SafeArea(
-          child: SBUGroupChannelCreateScreen(
-            onChannelCreated: (channel) {
-              moveToGroupChannelScreen(context, channel.channelUrl);
-            },
-          ),
-        ),
-      ),
-    ),
-  );
-}
-
-void moveToGroupChannelScreen(BuildContext context, String channelUrl) {
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (context) => Scaffold(
-        body: SafeArea(
-          child: SBUGroupChannelScreen(
-            channelUrl: channelUrl,
-            onInfoButtonClicked: (messageCollectionNo) {
-              final collection = SendbirdUIKit.getMessageCollection(
-                messageCollectionNo,
-              );
-              moveToGroupChannelInfoScreen(
-                context,
-                channelUrl,
-                messageCollectionNo,
-              );
-            },
-            onListItemClicked: (channel, message) async {
-              try {
-                if (message is UserMessage && message.ogMetaData != null) {
-                  final url = message.ogMetaData?.url;
-                  if (url != null) {
-                    print('Opening URL: $url');
-                  }
-                } else if (message is FileMessage &&
-                    message.secureUrl.isNotEmpty) {
-                  if (message.type != null) {
-                    if (message.type!.startsWith('image')) {
-                      print('Opening image: ${message.secureUrl}');
-                    } else if (message.type!.startsWith('video')) {
-                      print('Opening video: ${message.secureUrl}');
-                    }
-                  }
-                } else if (message is AdminMessage) {
-                  print('Admin message: ${message.message}');
-                } else {
-                  print('Unknown message type: $message');
-                }
-              } catch (e) {
-                debugPrint(e.toString());
-              }
-            },
-            on1On1ChannelCreated: (p0) {
-              print('1-on-1 channel created: $p0');
-            },
-            onChannelDeleted: (p0) {
-              print('Channel deleted: $p0');
-            },
-            onMessageCollectionReady: (messageCollectionNo) {},
-          ),
-        ),
-      ),
-    ),
-  );
-}
-
-void moveToGroupChannelInfoScreen(
-  BuildContext context,
-  String channelUrl,
-  int messageCollectionNo,
-) {
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (context) => Scaffold(
-        body: SafeArea(
-          child: SBUGroupChannelInformationScreen(
-            messageCollectionNo: messageCollectionNo,
-            onMembersButtonClicked: (p0) {
-              moveToChannelMembersScreen(
-                context,
-                channelUrl,
-                messageCollectionNo,
-              );
-            },
-            onModerationsButtonClicked: (p0) {
-              print('Moderations button clicked: $p0');
-            },
-            onChannelLeft: (p0) {
-              print('Channel left: $p0');
-            },
-          ),
-        ),
-      ),
-    ),
-  );
-}
-
-void moveToChannelMembersScreen(
-  BuildContext context,
-  String channelUrl,
-  int messageCollectionNo,
-) {
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (context) => Scaffold(
-        body: SafeArea(
-          child: SBUGroupChannelMembersScreen(
-            messageCollectionNo: messageCollectionNo, // Required parameter
-            onInviteButtonClicked: (channel) {
-              moveToInviteUsersScreen(context, messageCollectionNo);
-            },
-          ),
-        ),
-      ),
-    ),
-  );
-}
-
-void moveToInviteUsersScreen(BuildContext context, int messageCollectionNo) {
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (context) => Scaffold(
-        body: SafeArea(
-          child: SBUGroupChannelInviteScreen(
-            messageCollectionNo: messageCollectionNo,
-          ),
-        ),
-      ),
-    ),
-  );
 }
