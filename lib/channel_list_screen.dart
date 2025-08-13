@@ -5,52 +5,59 @@ import 'package:sendbird_uikit/sendbird_uikit.dart';
 
 import 'base_view.dart';
 import 'controllers/channel_list_controller.dart';
-import 'main.dart';
+import 'group_channel_create_page.dart';
+import 'group_channel_page.dart';
 
-class ChannelListScreen extends StatelessWidget {
+class ChannelListScreen extends BaseView<ChannelListController> {
   const ChannelListScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return BaseView<ChannelListController>(
-      controller: ChannelListController(),
-      builder: (context, controller) {
-        return Scaffold(
-          appBar: AppBar(title: const Text('Channel List Screen')),
-          body: SafeArea(
-            child: GetBuilder<ChannelListController>(
-              builder: (_) {
-                return SBUGroupChannelListScreen(
-                  query: controller.groupChannelListQuery,
-                  customHeader: (context, theme, strings, collection) {
-                    return ChannelListHeader(
-                      title:
-                          'Group ${controller.groupChannelListQuery.channelNameContainsFilter}',
-                      onSearch: controller.search,
-                    );
-                  },
-                  onCreateButtonClicked: moveToGroupChannelCreateScreen,
-                  onListItemClicked: (channel) {
-                    moveToGroupChannelScreen(channel.channelUrl);
-                  },
-                  customListItem:
-                      (context, theme, strings, collection, index, channel) {
-                    return ChannelListItem(channel: channel);
-                  },
+  Widget buildView(BuildContext context, ChannelListController controller) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Channel List Screen')),
+      body: SafeArea(
+        child: GetBuilder<ChannelListController>(
+          builder: (_) {
+            return SBUGroupChannelListScreen(
+              query: controller.groupChannelListQuery,
+              customHeader: (context, theme, strings, collection) {
+                return ChannelListHeader(
+                  selectedFilter: controller.selectedFilter,
+                  onFilterChanged: controller.setFilter,
                 );
               },
-            ),
-          ),
-        );
-      },
+              onCreateButtonClicked: () {
+                Get.to(() => const GroupChannelCreatePage());
+              },
+              onListItemClicked: (channel) {
+                Get.to(() => GroupChannelPage(channelUrl: channel.channelUrl));
+              },
+              customListItem:
+                  (context, theme, strings, collection, index, channel) {
+                    // Filter logic using controller
+                    if (!controller.shouldShowChannel(channel)) {
+                      return const SizedBox.shrink();
+                    }
+
+                    return ChannelListItem(channel: channel);
+                  },
+            );
+          },
+        ),
+      ),
     );
   }
 }
 
 class ChannelListHeader extends StatelessWidget {
-  final String title;
-  final void Function(String) onSearch;
-  const ChannelListHeader({super.key, required this.title, required this.onSearch});
+  final ChannelFilter selectedFilter;
+  final void Function(ChannelFilter) onFilterChanged;
+
+  const ChannelListHeader({
+    super.key,
+    required this.selectedFilter,
+    required this.onFilterChanged,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -59,35 +66,73 @@ class ChannelListHeader extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            title,
-            style: const TextStyle(
+          const Text(
+            'Channels',
+            style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
               color: Colors.amber,
             ),
           ),
-          const SizedBox(height: 12),
-          TextField(
-            decoration: InputDecoration(
-              hintText: 'Search by channel name',
-              prefixIcon: const Icon(Icons.search),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              _buildFilterChip(
+                label: 'All',
+                filter: ChannelFilter.all,
+                isSelected: selectedFilter == ChannelFilter.all,
               ),
-              contentPadding: const EdgeInsets.symmetric(
-                vertical: 0,
-                horizontal: 12,
+              const SizedBox(width: 8),
+              _buildFilterChip(
+                label: 'Read',
+                filter: ChannelFilter.read,
+                isSelected: selectedFilter == ChannelFilter.read,
               ),
-            ),
-            onSubmitted: onSearch,
+              const SizedBox(width: 8),
+              _buildFilterChip(
+                label: 'Unread',
+                filter: ChannelFilter.unread,
+                isSelected: selectedFilter == ChannelFilter.unread,
+              ),
+            ],
           ),
         ],
       ),
     );
   }
+
+  Widget _buildFilterChip({
+    required String label,
+    required ChannelFilter filter,
+    required bool isSelected,
+  }) {
+    return FilterChip(
+      label: Text(
+        label,
+        style: TextStyle(
+          color: isSelected ? Colors.white : Colors.amber,
+          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+        ),
+      ),
+      selected: isSelected,
+      onSelected: (selected) {
+        if (selected) {
+          onFilterChanged(filter);
+        }
+      },
+      selectedColor: Colors.amber,
+      backgroundColor: Colors.grey[200],
+      checkmarkColor: Colors.white,
+      side: BorderSide(
+        color: isSelected ? Colors.amber : Colors.grey,
+        width: 1,
+      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+    );
+  }
 }
 
+// ...existing code... (ChannelListItem remains the same)
 class ChannelListItem extends StatelessWidget {
   final GroupChannel channel;
   const ChannelListItem({super.key, required this.channel});
@@ -127,19 +172,11 @@ class ChannelListItem extends StatelessWidget {
     final unreadCount = channel.unreadMessageCount;
 
     return Card(
-      margin: const EdgeInsets.symmetric(
-        horizontal: 12,
-        vertical: 6,
-      ),
+      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 8,
-        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         leading: CircleAvatar(
           radius: 24,
           backgroundColor: Colors.amber,
@@ -166,8 +203,9 @@ class ChannelListItem extends StatelessWidget {
                     ? channel.name
                     : 'Group ${channel.members.length} members',
                 style: TextStyle(
-                  fontWeight:
-                      unreadCount > 0 ? FontWeight.bold : FontWeight.normal,
+                  fontWeight: unreadCount > 0
+                      ? FontWeight.bold
+                      : FontWeight.normal,
                   fontSize: 16,
                 ),
                 maxLines: 1,
@@ -188,8 +226,9 @@ class ChannelListItem extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 14,
                   color: Colors.black,
-                  fontWeight:
-                      unreadCount > 0 ? FontWeight.w500 : FontWeight.normal,
+                  fontWeight: unreadCount > 0
+                      ? FontWeight.w500
+                      : FontWeight.normal,
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -197,10 +236,7 @@ class ChannelListItem extends StatelessWidget {
             ),
             if (unreadCount > 0)
               Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 8,
-                  vertical: 4,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   color: Colors.amber,
                   borderRadius: BorderRadius.circular(12),
@@ -217,10 +253,9 @@ class ChannelListItem extends StatelessWidget {
           ],
         ),
         onTap: () {
-          moveToGroupChannelScreen(channel.channelUrl);
+          Get.to(() => GroupChannelPage(channelUrl: channel.channelUrl));
         },
       ),
     );
   }
 }
-

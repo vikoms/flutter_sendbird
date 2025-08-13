@@ -6,18 +6,18 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'base_view.dart';
-import 'controllers/home_controller.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:sendbird_chat_sdk/sendbird_chat_sdk.dart';
 import 'package:sendbird_uikit/sendbird_uikit.dart';
 
 import 'app_config.dart';
+import 'routes/app_pages.dart';
+import 'routes/app_routes.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  initSendBird();
+  await initSendBird();
   runApp(const MyApp());
 }
 
@@ -222,187 +222,8 @@ class MyApp extends StatelessWidget {
           ),
         );
       },
-      home: HomeScreen(),
+      initialRoute: Routes.home,
+      getPages: AppPages.pages,
     );
   }
-}
-
-class HomeScreen extends StatelessWidget {
-  HomeScreen({super.key});
-
-  final HomeController _controller = HomeController();
-
-  @override
-  Widget build(BuildContext context) {
-    return BaseView<HomeController>(
-      controller: _controller,
-      builder: (context, controller) {
-        return Scaffold(
-          body: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(
-                    'Sendbird Login',
-                    style:
-                        const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 32),
-                  TextField(
-                    controller: controller.userIdController,
-                    decoration: const InputDecoration(
-                      labelText: 'User ID',
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.account_circle),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  TextField(
-                    controller: controller.userNameController,
-                    decoration: const InputDecoration(
-                      labelText: 'User Name',
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.person),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  TextField(
-                    controller: controller.accessTokenController,
-                    decoration: const InputDecoration(
-                      labelText: 'Access Token',
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.key),
-                    ),
-                  ),
-                  const SizedBox(height: 32),
-                  ElevatedButton(
-                    onPressed: controller.login,
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                    ),
-                    child: const Text('Login', style: TextStyle(fontSize: 16)),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-}
-
-void moveToGroupChannelCreateScreen() {
-  Get.to(() => Scaffold(
-        body: SafeArea(
-          child: SBUGroupChannelCreateScreen(
-            onChannelCreated: (channel) {
-              moveToGroupChannelScreen(channel.channelUrl);
-            },
-          ),
-        ),
-      ));
-}
-
-void moveToGroupChannelScreen(String channelUrl) {
-  Get.to(() => Scaffold(
-        body: SafeArea(
-          child: SBUGroupChannelScreen(
-            channelUrl: channelUrl,
-            onInfoButtonClicked: (messageCollectionNo) {
-              moveToGroupChannelInfoScreen(
-                channelUrl,
-                messageCollectionNo,
-              );
-            },
-            onListItemClicked: (channel, message) async {
-              try {
-                if (message is UserMessage && message.ogMetaData != null) {
-                  final url = message.ogMetaData?.url;
-                  if (url != null) {
-                    print('Opening URL: $url');
-                  }
-                } else if (message is FileMessage &&
-                    message.secureUrl.isNotEmpty) {
-                  if (message.type != null) {
-                    if (message.type!.startsWith('image')) {
-                      print('Opening image: ${message.secureUrl}');
-                    } else if (message.type!.startsWith('video')) {
-                      print('Opening video: ${message.secureUrl}');
-                    }
-                  }
-                } else if (message is AdminMessage) {
-                  print('Admin message: ${message.message}');
-                } else {
-                  print('Unknown message type: $message');
-                }
-              } catch (e) {
-                debugPrint(e.toString());
-              }
-            },
-            on1On1ChannelCreated: (p0) {
-              print('1-on-1 channel created: $p0');
-            },
-            onChannelDeleted: (p0) {
-              print('Channel deleted: $p0');
-            },
-            onMessageCollectionReady: (messageCollectionNo) {},
-          ),
-        ),
-      ));
-}
-
-void moveToGroupChannelInfoScreen(
-  String channelUrl,
-  int messageCollectionNo,
-) {
-  Get.to(() => Scaffold(
-        body: SafeArea(
-          child: SBUGroupChannelInformationScreen(
-            messageCollectionNo: messageCollectionNo,
-            onMembersButtonClicked: (p0) {
-              moveToChannelMembersScreen(
-                channelUrl,
-                messageCollectionNo,
-              );
-            },
-            onModerationsButtonClicked: (p0) {
-              print('Moderations button clicked: $p0');
-            },
-            onChannelLeft: (p0) {
-              print('Channel left: $p0');
-            },
-          ),
-        ),
-      ));
-}
-
-void moveToChannelMembersScreen(
-  String channelUrl,
-  int messageCollectionNo,
-) {
-  Get.to(() => Scaffold(
-        body: SafeArea(
-          child: SBUGroupChannelMembersScreen(
-            messageCollectionNo: messageCollectionNo,
-            onInviteButtonClicked: (channel) {
-              moveToInviteUsersScreen(messageCollectionNo);
-            },
-          ),
-        ),
-      ));
-}
-
-void moveToInviteUsersScreen(int messageCollectionNo) {
-  Get.to(() => Scaffold(
-        body: SafeArea(
-          child: SBUGroupChannelInviteScreen(
-            messageCollectionNo: messageCollectionNo,
-          ),
-        ),
-      ));
 }
