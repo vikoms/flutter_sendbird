@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:sendbird_uikit/sendbird_uikit.dart';
 
-import '../channel_list_screen.dart';
+import '../routes/app_routes.dart';
 
 class HomeController extends GetxController {
   final userIdController = TextEditingController(
@@ -25,7 +25,7 @@ class HomeController extends GetxController {
           accessToken: accessToken,
           nickname: userName,
         );
-        Get.to(() => const ChannelListScreen());
+        Get.offNamed(Routes.channels);
       } catch (e) {
         Get.snackbar('Login failed', e.toString());
       }
