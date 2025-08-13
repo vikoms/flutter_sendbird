@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 
 import 'base_view.dart';
 import 'controllers/home_controller.dart';
+import 'routes/app_routes.dart';
 
 class HomeScreen extends BaseView<HomeController> {
   HomeScreen({super.key});
@@ -56,6 +57,11 @@ class HomeScreen extends BaseView<HomeController> {
                   padding: const EdgeInsets.symmetric(vertical: 16),
                 ),
                 child: const Text('Login', style: TextStyle(fontSize: 16)),
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () => Get.toNamed(Routes.products),
+                child: const Text('View Products'),
               ),
             ],
           ),
